@@ -108,8 +108,7 @@ class MainScreen(ctk.CTkFrame):
 
         # Price (with proper fallback)
         price = item_data.get('Giá tiền', 'N/A')
-        price_label = ctk.CTkLabel(details_frame, text=f"Giá: {price}",
-                                 font=("Arial", 14), anchor="w")
+        price_label = ctk.CTkLabel(details_frame, text=f"Giá: {price}",font=("Arial", 14), anchor="w")
         price_label.pack(side="left", padx=5)
 
         # Quantity (with proper fallback)
@@ -122,8 +121,7 @@ class MainScreen(ctk.CTkFrame):
         button_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
         button_frame.grid(row=0, column=2, rowspan=2, padx=10, pady=10, sticky="nsew")
 
-        edit_button = ctk.CTkButton(button_frame, text="Sửa", width=60,
-                                  command=lambda: self.switch_callback("ItemDetailScreen", item_data, self.update_item))
+        edit_button = ctk.CTkButton(button_frame, text="Sửa", width=60,command=lambda: self.switch_callback("ItemDetailScreen", item_data, self.update_item))
         edit_button.pack(pady=5)
 
         delete_button = ctk.CTkButton(button_frame, text="Xóa", width=60,
@@ -302,41 +300,44 @@ class MainScreen(ctk.CTkFrame):
         file_path = 'items.json'  # Specify your desired file path here
         with open(file_path, 'w') as json_file:
             json.dump(self.shared_items, json_file, indent=4)
+
     def view_order_details(self):
-        """This function will be triggered when the button is clicked to show customer order details"""
-        
-        # Create sample order data (in a real app, this would come from your database)
-        sample_order_data = {
-            "Order ID": "ORD12345",
-            "Customer": "Nguyễn Văn A",
-            "Items": [
-                {"name": "Bánh mì", "quantity": 2, "price": "15.000"},
-                {"name": "Kem", "quantity": 1, "price": "10.000"}
-            ],
-            "Total": "40.000",
-            "Date": "2023-05-15",
-            "Status": "Đã hoàn thành"
-        }
-        
-        # Format the order details for display
-        formatted_order_details = f"""
-        Order ID: {sample_order_data['Order ID']}
-        Customer: {sample_order_data['Customer']}
-        Date: {sample_order_data['Date']}
-        Status: {sample_order_data['Status']}
-        
-        Items:
-        """
-        
-        for item in sample_order_data['Items']:
-            formatted_order_details += f"    - {item['name']} x {item['quantity']} @ {item['price']}\n"
-        
-        formatted_order_details += f"""
-        Total: {sample_order_data['Total']}
-        """
-        
-        # Print the formatted order details (you can use this for logging or debugging)
+        """Hiển thị tất cả hóa đơn đã lưu từ file orders.txt"""
+
+        formatted_order_details = ""
+
+        try:
+            # Đọc từ file orders.txt thay vì orders.json
+            with open("orders.txt", "r", encoding="utf-8") as f:
+                for idx, line in enumerate(f, start=1):
+                    try:
+                        # Chuyển đổi chuỗi JSON trong file thành đối tượng Python
+                        order = json.loads(line.strip())
+
+                        formatted_order_details += f"\n=== HÓA ĐƠN {idx} ===\n"
+                        formatted_order_details += f"Thời gian: {order.get('timestamp', 'Không rõ')}\n"
+                        
+                        items = order.get("items", {})
+                        formatted_order_details += "Sản phẩm:\n"
+                        for item in items.values():
+                            data = item.get("data", {})
+                            quantity = item.get("quantity", 0)
+                            ten = data.get("Tên", "Không rõ")
+                            don_vi = data.get("Đơn vị", "Không rõ")
+                            gia = data.get("Giá tiền", "Không rõ")
+                            formatted_order_details += f"    - {ten} ({don_vi}) x {quantity} @ {gia}\n"
+                        
+                        formatted_order_details += f"Tổng tiền: {order.get('total_price', 'Không rõ')}\n"
+
+                    except json.JSONDecodeError:
+                        formatted_order_details += f"\nHóa đơn dòng {idx} bị lỗi hoặc sai định dạng JSON.\n"
+
+        except FileNotFoundError:
+            formatted_order_details = "Không tìm thấy file orders.txt."
+
+        # In ra hóa đơn (nếu cần logging)
         print(formatted_order_details)
 
-        # Switch to the order detail screen, passing the formatted order data
+        # Chuyển nội dung hóa đơn đến màn hình chi tiết
         self.switch_callback("OrderDetailsScreen", formatted_order_details)
+

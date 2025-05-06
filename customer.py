@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import messagebox, filedialog
 from PIL import Image, ImageTk
+from datetime import datetime
 import json
 
 class CustomerScreen(ctk.CTkFrame):
@@ -227,21 +228,42 @@ class CustomerScreen(ctk.CTkFrame):
             if self.cart[barcode]['quantity'] <= 0:
                 del self.cart[barcode]
             self.refresh_cart_display()
+            
     def place_order(self):
-        if not self.cart:  # Check self.cart instead of self.cart_items
+        if not self.cart:
             messagebox.showwarning("Giỏ hàng trống", "Vui lòng thêm sản phẩm vào giỏ hàng trước khi đặt món.")
             return
 
         total_items = sum(item['quantity'] for item in self.cart.values())
+        total_price = self.total_label.cget('text')
+
         response = messagebox.askyesno(
             "Xác nhận đơn hàng",
-            f"Bạn có chắc chắn muốn đặt {total_items} món với tổng giá {self.total_label.cget('text')}?"
+            f"Bạn có chắc chắn muốn đặt {total_items} món với tổng giá {total_price}?"
         )
 
         if response:
+            # Ghi thông tin đơn hàng vào file .txt
+            order_info = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "items": self.cart,
+                "total_items": total_items,
+                "total_price": total_price
+            }
+
+            try:
+                # Mở file orders.txt thay vì orders.json
+                with open("orders.txt", "a", encoding="utf-8") as f:
+                    # Dùng json.dumps để chuyển đổi order_info thành chuỗi JSON
+                    # Sau đó ghi nó dưới dạng chuỗi vào file .txt
+                    f.write(json.dumps(order_info, ensure_ascii=False) + "\n")
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể lưu đơn hàng: {e}")
+                return
+
             messagebox.showinfo("Đặt hàng thành công", "Đơn hàng của bạn đã được ghi nhận!")
-            self.cart.clear()  # Clear the cart dictionary
-            self.refresh_cart_display() 
+            self.cart.clear()
+            self.refresh_cart_display()
 
     def add_new_item(self, item_data):
         """Add a new item to both screens"""
